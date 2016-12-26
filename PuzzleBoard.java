@@ -22,29 +22,34 @@ public class PuzzleBoard {
     private PuzzleBoard previousBoard=getPreviousBoard();
 
 
-    PuzzleBoard(Bitmap bitmap, int parentWidth) {
-     tiles=new ArrayList<>();
-        Bitmap scaledBitmap=Bitmap.createScaledBitmap(bitmap,parentWidth,parentWidth,false);
-        for(int i=0;i<NUM_TILES*NUM_TILES-1;i++){
-            int x=i%NUM_TILES;
-            int y=i/NUM_TILES;
-            int size=parentWidth/NUM_TILES;;
+    PuzzleBoard(PuzzleBoard bitmap, int parentWidth) {
+        steps = 0;
+        previousBoard = null;
+        tiles = new ArrayList<>();
+        Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap,parentWidth,parentWidth,true);
+        for(int y = 0;y<NUM_TILES;y++){
+            for(int x = 0;x<NUM_TILES;x++){
+                int num = y*NUM_TILES + x;
+                if(num != NUM_TILES*NUM_TILES - 1){
+                    Bitmap tileBitmap = Bitmap.createBitmap(scaledBitmap, x *scaledBitmap.getWidth() / NUM_TILES, y * scaledBitmap.getHeight() / NUM_TILES, parentWidth / NUM_TILES, parentWidth / NUM_TILES);
+                    PuzzleTile tile = new PuzzleTile(tileBitmap,num);
+                    tiles.add(tile);
+                }
+                else{
+                    tiles.add(null);
 
-            Bitmap tileBitmap=Bitmap.createBitmap(scaledBitmap,x*size,y*size,size,size);
-            PuzzleTile tile=new PuzzleTile(tileBitmap,i);
-            tiles.add(i,tile);
-
+                }
+            }
         }
-        tiles.add(null);
-
-
     }
 
     PuzzleBoard(PuzzleBoard otherBoard) {
+        previousBoard = otherBoard;
         tiles = (ArrayList<PuzzleTile>) otherBoard.tiles.clone();
-        previousBoard=otherBoard;
-
+        this.steps = steps + 1;
     }
+
+
 
     public void reset() {
         // Nothing for now but you may have things to reset once you implement the solver.
@@ -145,15 +150,26 @@ public class PuzzleBoard {
 
 
     public int priority() {
-        int distance=0;
-        for(int i=0;i<NUM_TILES*NUM_TILES-1;i++){
-            PuzzleTile tile=tiles.get(i);
-            if(tile!=null){
 
+        int distance = 0;
+        for(int i = 0;i<NUM_TILES * NUM_TILES;i++){
+            PuzzleTile tile = tiles.get(i);
+
+            if(tile != null){
+                int correctPosition = tile.getNumber();
+                int correctX = correctPosition%NUM_TILES;
+                int correctY = correctPosition/NUM_TILES;
+                int currentX = i%NUM_TILES;
+                int currentY = i/NUM_TILES;
+                distance = distance + (Math.abs(currentX - correctX)) + Math.abs(currentY - correctY);
             }
+
         }
-        return 0;
+
+        return distance + steps;
+
     }
+
 
     public int getSteps() {
         return steps;

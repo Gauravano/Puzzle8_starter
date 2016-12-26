@@ -15,6 +15,7 @@ public class PuzzleTile {
     }
 
     public int getNumber() {
+
         return number;
     }
 
