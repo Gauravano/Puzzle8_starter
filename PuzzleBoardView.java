@@ -8,7 +8,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -22,6 +21,7 @@ public class PuzzleBoardView extends View {
     private PuzzleBoard puzzleBoard;
     private ArrayList<PuzzleBoard> animation;
     private Random random = new Random();
+
     private Comparator<PuzzleBoard> comparator = new Comparator<PuzzleBoard>() {
         @Override
         public int compare(PuzzleBoard lhs, PuzzleBoard rhs) {
@@ -35,9 +35,9 @@ public class PuzzleBoardView extends View {
         animation = null;
     }
 
-    public void initialize(Bitmap imageBitmap, View parent) {
+    public void initialize(Bitmap imageBitmap,View parent) {
         int width = getWidth();
-        puzzleBoard = new PuzzleBoard(imageBitmap,width);
+        puzzleBoard = new PuzzleBoard(imageBitmap, width);
     }
 
     @Override
@@ -63,11 +63,15 @@ public class PuzzleBoardView extends View {
 
     public void shuffle() {
         if (animation == null && puzzleBoard != null) {
-            for(int i=0;i<NUM_SHUFFLE_STEPS;i++){
-                ArrayList<PuzzleBoard> neighbours = puzzleBoard.neighbours();
+            // Do something. Then:
+
+            for (int i=0;i<NUM_SHUFFLE_STEPS;i++){
+                ArrayList<PuzzleBoard>neighbours = puzzleBoard.neighbours();
                 int randomInt = random.nextInt(neighbours.size());
-                puzzleBoard = neighbours.get(randomInt);
+                puzzleBoard =neighbours.get(randomInt);
             }
+
+//            puzzleBoard.reset();
             invalidate();
         }
     }
@@ -91,17 +95,18 @@ public class PuzzleBoardView extends View {
     }
 
     public void solve() {
-        PriorityQueue<PuzzleBoard> queue = new PriorityQueue<>(1,comparator);
-        PuzzleBoard current = new PuzzleBoard(puzzleBoard,-1);
-        current.setPreviousBoard(null);
-        queue.add(current);
-        while(!queue.isEmpty()){
-            PuzzleBoard bestState = queue.poll();
+        PriorityQueue<PuzzleBoard> priorityQueue =new PriorityQueue<>(1,comparator);
+        PuzzleBoard currentBoard =new PuzzleBoard(puzzleBoard,-1);
+        currentBoard.setPreviousBord(null);
+        priorityQueue.add(currentBoard);
+
+        while (!priorityQueue.isEmpty()){
+            PuzzleBoard bestState = priorityQueue.poll();
             if(bestState.resolved()){
                 ArrayList<PuzzleBoard> steps = new ArrayList<>();
-                while(bestState.getPreviousBoard()!=null){
+                while(bestState.getPreviousBord()!=null){
                     steps.add(bestState);
-                    bestState = bestState.getPreviousBoard();
+                    bestState = bestState.getPreviousBord();
                 }
                 Collections.reverse(steps);
                 animation = steps;
@@ -109,9 +114,11 @@ public class PuzzleBoardView extends View {
                 break;
             }
             else{
-                queue.addAll(bestState.neighbours());
+                priorityQueue.addAll(bestState.neighbours());
             }
         }
-    }
 
+
+
+    }
 }

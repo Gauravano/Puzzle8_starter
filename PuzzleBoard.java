@@ -5,51 +5,54 @@ import android.graphics.Canvas;
 
 import java.util.ArrayList;
 
-import static android.graphics.Bitmap.createScaledBitmap;
-
 
 public class PuzzleBoard {
 
     private static final int NUM_TILES = 3;
     private static final int[][] NEIGHBOUR_COORDS = {
-            { -1, 0 },
-            { 1, 0 },
-            { 0, -1 },
-            { 0, 1 }
+            {-1, 0},
+            {1, 0},
+            {0, -1},
+            {0, 1}
     };
+
     private ArrayList<PuzzleTile> tiles;
-    private int steps=0;
-    private PuzzleBoard previousBoard=getPreviousBoard();
+    private int stepnumber = 0;
+    private PuzzleBoard previousBord;
 
+    public PuzzleBoard getPreviousBord(){return previousBord; }
 
-    PuzzleBoard(PuzzleBoard bitmap, int parentWidth) {
-        steps = 0;
-        previousBoard = null;
+    public void setPreviousBord(PuzzleBoard previousBord){
+        this.previousBord = previousBord ;
+    }
+
+    PuzzleBoard(Bitmap bitmap, int parentWidth) {
+        stepnumber = 0;
         tiles = new ArrayList<>();
-        Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap,parentWidth,parentWidth,true);
-        for(int y = 0;y<NUM_TILES;y++){
-            for(int x = 0;x<NUM_TILES;x++){
-                int num = y*NUM_TILES + x;
-                if(num != NUM_TILES*NUM_TILES - 1){
-                    Bitmap tileBitmap = Bitmap.createBitmap(scaledBitmap, x *scaledBitmap.getWidth() / NUM_TILES, y * scaledBitmap.getHeight() / NUM_TILES, parentWidth / NUM_TILES, parentWidth / NUM_TILES);
-                    PuzzleTile tile = new PuzzleTile(tileBitmap,num);
+        Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, parentWidth, parentWidth, true);
+        for (int y = 0; y < NUM_TILES; y++) {
+            for (int x = 0; x < NUM_TILES; x++) {
+                int tileNumber = y * NUM_TILES + x;
+//                int tileSize = scaledBitmap.getWidth() / NUM_TILES;
+                if (tileNumber != NUM_TILES * NUM_TILES - 1) {
+                    Bitmap tileBitmap = Bitmap.createBitmap(scaledBitmap, x * scaledBitmap.getWidth() / NUM_TILES, y * scaledBitmap.getWidth() / NUM_TILES, parentWidth / NUM_TILES, parentWidth / NUM_TILES);
+                    PuzzleTile tile = new PuzzleTile(tileBitmap, tileNumber);
                     tiles.add(tile);
-                }
-                else{
+                } else {
                     tiles.add(null);
-
                 }
             }
+
         }
+
+
     }
 
-    PuzzleBoard(PuzzleBoard otherBoard) {
-        previousBoard = otherBoard;
+    PuzzleBoard(PuzzleBoard otherBoard, int stepnumber) {
+        previousBord = otherBoard;
         tiles = (ArrayList<PuzzleTile>) otherBoard.tiles.clone();
-        this.steps = steps + 1;
+        this.stepnumber = stepnumber + 1;
     }
-
-
 
     public void reset() {
         // Nothing for now but you may have things to reset once you implement the solver.
@@ -119,75 +122,51 @@ public class PuzzleBoard {
         tiles.set(j, temp);
     }
 
-    public ArrayList<PuzzleBoard> neighbours()
-    {
-            ArrayList<PuzzleBoard> neighbours=new ArrayList<>();
-        int i;
-        int empty_tileIndex;
-        int x_emptytile=0,y_emptytile=0;
+    public ArrayList<PuzzleBoard> neighbours() {
+        ArrayList<PuzzleBoard> neighbours = new ArrayList<>();
+        int emptyTileX = 0;
+        int emptyTileY = 0;
 
-        for(i=0;i<NUM_TILES*NUM_TILES-1;i++) {
+        for (int i = 0; i < NUM_TILES * NUM_TILES; i++) {
             if (tiles.get(i) == null) {
-                x_emptytile = i % NUM_TILES;
-                y_emptytile = i / NUM_TILES;
+                emptyTileX = i % NUM_TILES;
+                emptyTileY = i / NUM_TILES;
                 break;
             }
-
         }
-        for(int[] delta:NEIGHBOUR_COORDS){
-            int neighbourX=x_emptytile+delta[0];
-            int neighbourY=y_emptytile+delta[1];
-            if(neighbourX>0 && neighbourY<NUM_TILES && neighbourY>0 && neighbourX<NUM_TILES){
-                PuzzleBoard neighbourBoard=new PuzzleBoard(this);
-                neighbourBoard.swapTiles(XYtoIndex(neighbourX,neighbourY),XYtoIndex(x_emptytile,y_emptytile));
-                neighbours.add(neighbourBoard);
+
+        for (int[] coordinates : NEIGHBOUR_COORDS) {
+            int neighbourX = emptyTileX + coordinates[0];
+            int neighbourY = emptyTileY + coordinates[1];
+            if (neighbourX >= 0 && neighbourX < NUM_TILES && neighbourY >= 0 && neighbourY < NUM_TILES) {
+
+                PuzzleBoard neigbourBord = new PuzzleBoard(this, stepnumber);
+                neigbourBord.swapTiles(XYtoIndex(neighbourX, neighbourY), XYtoIndex(emptyTileX, emptyTileY));
+                neighbours.add(neigbourBord);
 
             }
-
         }
+
         return neighbours;
     }
 
-
     public int priority() {
-
-        int distance = 0;
-        for(int i = 0;i<NUM_TILES * NUM_TILES;i++){
+        int Manhattan_Distance = 0;
+        for (int i = 0; i < NUM_TILES * NUM_TILES; i++) {
             PuzzleTile tile = tiles.get(i);
+            if (tile != null) {
+                int correctposition = tile.getNumber();
+                int correctX = correctposition % NUM_TILES;
+                int correctY = correctposition / NUM_TILES;
+                int correntX = i % NUM_TILES;
+                int correntY = i / NUM_TILES;
+                Manhattan_Distance += Math.abs(correntX - correctX) + Math.abs(correntY - correctY);
 
-            if(tile != null){
-                int correctPosition = tile.getNumber();
-                int correctX = correctPosition%NUM_TILES;
-                int correctY = correctPosition/NUM_TILES;
-                int currentX = i%NUM_TILES;
-                int currentY = i/NUM_TILES;
-                distance = distance + (Math.abs(currentX - correctX)) + Math.abs(currentY - correctY);
             }
 
         }
 
-        return distance + steps;
-
+        return Manhattan_Distance + stepnumber;
     }
-
-
-    public int getSteps() {
-        return steps;
-    }
-
-        public void setSteps(int stepsinput){
-        steps=stepsinput;
-
-    }
-
-    public PuzzleBoard getPreviousBoard(){
-        return previousBoard;
-    }
-
-    public void setPreviousBoard(PuzzleBoard previousBoard){
-        this.previousBoard=previousBoard;
-    }
-
-
 
 }
